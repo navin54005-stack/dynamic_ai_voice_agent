@@ -1,4 +1,4 @@
-# 🎙️ Dynamic Voice Agent (Flask)
+# 🎙️ Dynamic Voice Agent
 
 A **Flask-based AI Voice/Chat Agent backend** that dynamically responds to customer inputs using **company data uploaded via CSV**. Designed for call-center–style conversational agents, lead handling, and company-aware AI responses.
 
@@ -175,18 +175,6 @@ The system **auto-detects columns**, but common headers include:
 
 ---
 
-## 🧠 Future Enhancements
-
-* 📞 Twilio / GSM call integration
-* 🔊 Text-to-Speech (TTS)
-* 🤖 Ollama / LLM backend integration
-* 📊 Admin analytics dashboard
-
----
-
-## 🤝 Contributing
-
-Pull requests are welcome! For major changes, please open an issue first.
 
 ## 👨‍💻 Author
 
