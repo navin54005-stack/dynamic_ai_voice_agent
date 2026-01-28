@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Voice Agent</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --light: #f8fafc;
+            --dark: #0f172a;
+        }
+        
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            min-height: 100vh;
+            color: var(--dark);
+        }
+        
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .card { background: white; border-radius: 16px; padding: 25px; margin: 20px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .btn { padding: 12px 20px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        
+        .mic-button {
+            background: var(--success);
+            color: white;
+            border: none;
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 2rem;
+        }
+        
+        .mic-button.recording { background: var(--danger); animation: pulse 1.5s infinite; }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .status-box { padding: 15px; border-radius: 8px; margin: 15px 0; }
+        .status-success { background: #dcfce7; color: #15803d; }
+        .status-error { background: #fee2e2; color: #b91c1c; }
+        .status-info { background: #dbeafe; color: #1d4ed8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 Dynamic Voice Agent</h1>
+        <p>Upload your company data and start voice conversations</p>
+        
+        <!-- Company Data Upload Section -->
+        <div class="card">
+            <h2>🏢 Company Data Upload</h2>
+            <input type="file" id="companyData" accept=".csv" style="margin: 15px 0;">
+            <button class="btn btn-primary" onclick="uploadCompanyData()">Upload CSV</button>
+            <div id="uploadStatus" class="status-box" style="display: none;"></div>
+        </div>
+        
+        <!-- Voice Controls Section -->
+        <div class="card">
+            <h2>🎙️ Voice Controls</h2>
+            <center>
+                <button id="micButton" class="mic-button" onclick="toggleRecording()" disabled>🎤</button>
+            </center>
+            <div id="statusIndicator" class="status-box status-info">
+                Upload company data to enable voice controls
+            </div>
+            <div id="transcript" style="padding: 15px; background: #f8fafc; border-radius: 8px; margin: 15px 0; min-height: 60px;">
+                Transcript will appear here...
+            </div>
+        </div>
+        
+        <!-- Conversation History -->
+        <div class="card">
+            <h2>💬 Conversation</h2>
+            <div id="conversationHistory" style="max-height: 300px; overflow-y: auto;">
+                <div style="padding: 15px; background: #f0f9ff; border-left: 4px solid #2563eb; margin: 10px 0; border-radius: 8px;">
+                    <strong>🤖 Voice Agent:</strong> Hello! Upload your company CSV to get started.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isRecording = false;
+        let recognition;
+        let synth = window.speechSynthesis;
+        let isSpeaking = false;
+        
+        // Initialize Speech Recognition
+        function initSpeechRecognition() {
+            if (!('webkitSpeechRecognition' in window)) {
+                showStatus('Speech recognition not supported. Please use Chrome.', 'error');
+                return false;
+            }
+            
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'en-US';
+            
+            recognition.onresult = function(event) {
+                let final_transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        final_transcript += event.results[i][0].transcript;
+                    }
+                }
+                
+                if (final_transcript) {
+                    document.getElementById('transcript').textContent = final_transcript;
+                    processVoiceInput(final_transcript);
+                }
+            };
+            
+            recognition.onerror = function(event) {
+                showStatus('Speech recognition error: ' + event.error, 'error');
+                stopRecording();
+            };
+            
+            return true;
+        }
+        
+        function toggleRecording() {
+            if (!recognition) {
+                if (!initSpeechRecognition()) return;
+            }
+            
+            if (!isRecording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        }
+        
+        function startRecording() {
+            try {
+                recognition.start();
+                isRecording = true;
+                document.getElementById('micButton').classList.add('recording');
+                showStatus('🎙️ Listening... Speak now', 'info');
+            } catch (error) {
+                showStatus('Error starting microphone: ' + error.message, 'error');
+            }
+        }
+        
+        function stopRecording() {
+            if (recognition && isRecording) {
+                recognition.stop();
+                isRecording = false;
+                document.getElementById('micButton').classList.remove('recording');
+                showStatus('Click microphone to start speaking', 'info');
+            }
+        }
+        
+        async function processVoiceInput(userSpeech) {
+            addMessageToDisplay('user', userSpeech);
+            
+            try {
+                const response = await fetch('/get-ai-response', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        customer_response: userSpeech,
+                        customer_data: { id: 'voice-user-' + Date.now() }
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    addMessageToDisplay('ai', data.ai_response);
+                    speakText(data.ai_response);
+                } else {
+                    addMessageToDisplay('ai', 'Error: ' + data.error);
+                }
+            } catch (error) {
+                addMessageToDisplay('ai', 'Connection error: ' + error.message);
+            }
+        }
+        
+        function addMessageToDisplay(speaker, message) {
+            const historyContainer = document.getElementById('conversationHistory');
+            const messageDiv = document.createElement('div');
+            messageDiv.style.padding = '15px';
+            messageDiv.style.margin = '10px 0';
+            messageDiv.style.borderRadius = '8px';
+            
+            if (speaker === 'ai') {
+                messageDiv.style.background = '#f0f9ff';
+                messageDiv.style.borderLeft = '4px solid #2563eb';
+                messageDiv.innerHTML = `<strong>🤖 Voice Agent:</strong> ${message}`;
+            } else {
+                messageDiv.style.background = '#e0f2fe';
+                messageDiv.style.borderLeft = '4px solid #0ea5e9';
+                messageDiv.innerHTML = `<strong>👤 You:</strong> ${message}`;
+            }
+            
+            historyContainer.appendChild(messageDiv);
+            historyContainer.scrollTop = historyContainer.scrollHeight;
+        }
+        
+        function speakText(text) {
+            if (isSpeaking) synth.cancel();
+            if (!text) return;
+            
+            isSpeaking = true;
+            const utterThis = new SpeechSynthesisUtterance(text);
+            utterThis.rate = 1.0;
+            utterThis.pitch = 1.0;
+            
+            utterThis.onend = function() { isSpeaking = false; };
+            utterThis.onerror = function() { isSpeaking = false; };
+            
+            synth.speak(utterThis);
+        }
+        
+        async function uploadCompanyData() {
+            const fileInput = document.getElementById('companyData');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showStatus('Please select a CSV file', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            try {
+                showStatus('Uploading...', 'info');
+                
+                const response = await fetch('/upload-company-data', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showStatus('✅ ' + data.message, 'success');
+                    document.getElementById('micButton').disabled = false;
+                    showStatus('Company data loaded! Click microphone to start.', 'success');
+                } else {
+                    showStatus('❌ ' + data.error, 'error');
+                    document.getElementById('micButton').disabled = true;
+                }
+            } catch (error) {
+                showStatus('❌ Upload failed: ' + error.message, 'error');
+            }
+        }
+        
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('uploadStatus');
+            statusDiv.style.display = 'block';
+            statusDiv.textContent = message;
+            statusDiv.className = 'status-box status-' + type;
+            
+            // Also update main status
+            document.getElementById('statusIndicator').textContent = message;
+            document.getElementById('statusIndicator').className = 'status-box status-' + type;
+        }
+        
+        // Initialize when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initSpeechRecognition();
+        });
+    </script>
+</body>
+</html>
