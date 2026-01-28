@@ -22,7 +22,7 @@ Clone the repository:
 
 Bash
 
-git clone https://github.com/yourusername/dynamic-voice-agent.git
+git clone https://github.com/Mayankp2005/dynamic-voice-agent.git
 Navigate to the directory:
 
 Bash
