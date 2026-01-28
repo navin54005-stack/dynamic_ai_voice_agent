@@ -1,73 +1,199 @@
-🤖 Dynamic Voice Agent
-A data-driven Python voice agent that dynamically adapts its identity and responses based on uploaded company datasets. Unlike hardcoded bots, this agent extracts its persona, industry context, and service offerings directly from your business data.
+# 🎙️ Dynamic Voice Agent (Flask)
 
-🌟 Key Features
-Dynamic Identity Extraction: Automatically parses CSV data to identify company names, representative names, and core services using smart-mapping aliases.
+A **Flask-based AI Voice/Chat Agent backend** that dynamically responds to customer inputs using **company data uploaded via CSV**. Designed for call-center–style conversational agents, lead handling, and company-aware AI responses.
 
-Persistent Learning: Saves conversation patterns to local storage (data/patterns/) to build a knowledge base over time.
+---
 
-Contextual Responses: Generates industry-specific replies by injecting real-time company metadata into its logic.
+## 🚀 Features
 
-ML-Ready Architecture: Built-in integration with scikit-learn (TF-IDF and KMeans) for future intent clustering and advanced NLP.
+* 📂 **Smart CSV Upload** – Automatically detects company & contact-related columns
+* 🧠 **Dynamic AI Agent** – Generates short, contextual responses (5–10 sec speech)
+* 🗣️ **Conversation Learning** – Tracks patterns & learning insights
+* 🔐 **Session-Based State** – Company data stored securely per session
+* 🧪 **Health Monitoring API**
+* ⚡ Lightweight & fast Flask server
 
-🚀 Getting Started
-Prerequisites
-Ensure you have Python 3.8+ installed. You will need the following libraries:
+---
 
-Bash
+## 🗂️ Project Structure
 
-pip install scikit-learn numpy
-Installation
-Clone the repository:
+```
+project-root/
+│
+├── app.py                  # Main Flask application
+├── config.py               # Central configuration
+├── dynamic_ai_model.py     # Core AI logic (DynamicVoiceAgent)
+├── utils/
+│   └── csv_processor.py    # Smart CSV parsing & column detection
+│
+├── templates/
+│   └── index.html          # Web UI
+│
+├── uploads/                # Uploaded CSV files
+├── data/
+│   ├── clusters/           # Conversation clusters
+│   ├── patterns/           # Learned response patterns
+│   └── sessions/           # Session data
+│
+├── .env                    # Environment variables
+├── requirements.txt
+└── README.md
+```
 
-Bash
+---
 
-git clone https://github.com/@navin54005-stack/dynamic-voice-agent.git
-Navigate to the directory:
+## ⚙️ Installation
 
-Bash
+### 1️⃣ Clone the Repository
 
+```bash
+git clone https://github.com/your-username/dynamic-voice-agent.git
 cd dynamic-voice-agent
-🛠️ Usage
-1. Basic Implementation
-Initialize the agent and load your business data.
+```
 
-Python
+### 2️⃣ Create Virtual Environment (Recommended)
 
-from dynamic_ai_model import DynamicVoiceAgent
+```bash
+python -m venv venv
+source venv/bin/activate   # Linux / Mac
+venv\Scripts\activate      # Windows
+```
 
-# Initialize the agent
-agent = DynamicVoiceAgent()
+### 3️⃣ Install Dependencies
 
-# Example data structure from a CSV
-company_data = [{
-    "company_name": "TechFlow Solutions",
-    "industry": "Software Development",
-    "calling_agent_name": "Alex",
-    "services": "Cloud Infrastructure"
-}]
+```bash
+pip install -r requirements.txt
+```
 
-# Load the data
-agent.load_company_data(company_data, columns=list(company_data[0].keys()))
-2. Generating Responses
-The agent uses the loaded data to personalize its interactions:
+### 4️⃣ Setup Environment Variables
 
-Python
+Create a `.env` file:
 
-response = agent.generate_short_response("What services do you offer?")
-print(response) 
-# Output: "We offer Cloud Infrastructure for Software Development companies. What interests you most?"
-📂 Project Structure
-dynamic_ai_model.py: The core logic and DynamicVoiceAgent class.
+```env
+SECRET_KEY=your-super-secret-key
+```
 
-data/patterns/: Directory where conversation_patterns.json is stored for persistent learning.
+---
 
-📈 Future Roadmap
-[ ] Intent Clustering: Implement the KMeans logic to group similar user queries.
+## ▶️ Running the Application
 
-[ ] Fuzzy Matching: Integrate thefuzz for more flexible keyword recognition.
+```bash
+python app.py
+```
 
-[ ] LLM Integration: Use the extracted company profile as a system prompt for OpenAI/Anthropic APIs.
+Server will start at:
 
-📝 License
-Distributed under the MIT License. See LICENSE for more information.
+* 🌐 **App**: [http://127.0.0.1:5000](http://127.0.0.1:5000)
+* 🧪 **Health Check**: [http://127.0.0.1:5000/health](http://127.0.0.1:5000/health)
+
+---
+
+## 📡 API Endpoints
+
+### 🔹 Upload Company Data
+
+`POST /upload-company-data`
+
+* **Input**: CSV file
+* **Output**: Company info, detected columns, record count
+
+---
+
+### 🔹 Get AI Response
+
+`POST /get-ai-response`
+
+```json
+{
+  "customer_response": "Tell me about your services",
+  "customer_data": {"name": "John"}
+}
+```
+
+---
+
+### 🔹 Learning Insights
+
+`GET /get-learning-insights`
+
+Returns AI learning patterns & conversation insights.
+
+---
+
+### 🔹 Health Check
+
+`GET /health`
+
+```json
+{
+  "status": "healthy",
+  "company_data_loaded": true
+}
+```
+
+---
+
+### 🔹 Clear Session
+
+`POST /clear-session`
+
+Clears uploaded company data & session memory.
+
+---
+
+## 📄 CSV Format (Flexible)
+
+The system **auto-detects columns**, but common headers include:
+
+* Company Name
+* Services / Products
+* Phone / Email
+* Address
+* Contact Person
+
+> No strict format required 🎯
+
+---
+
+## 🔐 Configuration (`config.py`)
+
+| Setting              | Description                    |
+| -------------------- | ------------------------------ |
+| `MAX_RESPONSE_WORDS` | Keeps responses short          |
+| `CLUSTER_COUNT`      | Conversation learning clusters |
+| `SESSION_TIMEOUT`    | Session expiry time            |
+
+---
+
+## 🛠️ Tech Stack
+
+* **Python 3.9+**
+* **Flask**
+* **Session-based state**
+* **CSV intelligence processing**
+* **Modular AI logic**
+
+---
+
+## 🧠 Future Enhancements
+
+* 📞 Twilio / GSM call integration
+* 🔊 Text-to-Speech (TTS)
+* 🤖 Ollama / LLM backend integration
+* 📊 Admin analytics dashboard
+
+---
+
+## 🤝 Contributing
+
+Pull requests are welcome! For major changes, please open an issue first.
+
+## 👨‍💻 Author
+
+**Naveen Rao
+Mayank Panwar**
+AI & Automation Developer
+
+---
+
+⭐ If you find this project useful, don’t forget to star the repo!
